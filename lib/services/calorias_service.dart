@@ -40,8 +40,8 @@ class CaloriasService {
       // Converte os documentos para uma lista de mapas
       List<Map<String, dynamic>> listaCalorias = snapshot.docs.map((doc) {
         return {
-          'dia': doc['dia'], // Certifique-se de que o nome do campo seja igual ao do seu documento
-          'calorias': doc['calorias'], // Certifique-se de que o nome do campo seja igual ao do seu documento
+          'dia': doc['dia'], 
+          'calorias': doc['calorias'], 
         };
       }).toList();
       

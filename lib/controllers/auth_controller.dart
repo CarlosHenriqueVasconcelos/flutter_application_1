@@ -40,7 +40,7 @@ class AuthController extends GetxController {
       user.value = null; // Limpa a variável `user` após logout
     } catch (e) {
       print("Erro ao fazer logout: $e");
-      // Você pode adicionar mais lógica de tratamento de erro se necessário
+      
     }
   }
 

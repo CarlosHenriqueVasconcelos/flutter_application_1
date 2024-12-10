@@ -24,7 +24,7 @@ class CaloriasModel {
     };
   }
 
-  // Método para criar um objeto a partir de um mapa (útil para deserialização do Firestore).
+  // Método para criar um objeto a partir de um mapa 
   static CaloriasModel fromMap(Map<String, dynamic> map) {
     final caloriasModel = CaloriasModel();
     if (map['caloriasPorDia'] != null) {
