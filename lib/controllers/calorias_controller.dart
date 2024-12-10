@@ -1,36 +1,37 @@
-import '../models/calorias_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get/get.dart';
+import '../services/calorias_service.dart';
 
-class CaloriasController {
-  final CaloriasModel caloriasModel;
+class CaloriasController extends GetxController {
+  final CaloriasService _caloriasService;
+  Rx<User?> user = Rx<User?>(null);
 
-  CaloriasController(this.caloriasModel);
+  CaloriasController(this._caloriasService);
 
-  // Validação da entrada (calorias e dia)
+  @override
+  void onInit() {
+    super.onInit();
+    user.value = FirebaseAuth.instance.currentUser;
+  }
+
   String validarEntrada(String caloriasInput, String diaInput) {
-    if (caloriasInput.isEmpty || diaInput.isEmpty) {
-      return 'Por favor, preencha todos os campos.';
-    }
-    final calorias = double.tryParse(caloriasInput);
-    final dia = int.tryParse(diaInput);
-
-    if (calorias == null || calorias <= 0) {
-      return 'Digite um valor válido para calorias.';
-    }
-
-    if (dia == null || dia < 1 || dia > 31) {
-      return 'Digite um dia válido entre 1 e 31.';
-    }
-
-    return ''; // Nenhum erro
+    return _caloriasService.validarEntrada(caloriasInput, diaInput);
   }
 
-  // Adiciona calorias ao modelo
   void adicionarCalorias(int dia, double calorias) {
-    caloriasModel.adicionarCalorias(dia, calorias);
+    _caloriasService.adicionarCalorias(dia, calorias);
   }
 
-  // Retorna o resumo do mês
-  Map<int, double> obterResumoMes() {
-    return caloriasModel.obterResumoMes();
+  Future<List<Map<String, dynamic>>> obterResumo() async {
+    return _caloriasService.obterResumo();
+  }
+
+  Future<void> logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      user.value = null; // Define o usuário como nulo após o logout
+    } catch (e) {
+      print("Erro ao fazer logout: $e");
+    }
   }
 }

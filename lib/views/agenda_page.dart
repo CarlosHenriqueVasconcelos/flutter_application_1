@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/models/calorias_model.dart';
+import 'package:flutter_application_1/services/calorias_service.dart';
 import '../controllers/calorias_controller.dart';
-import '../models/calorias_model.dart';
-import 'resumo_mes_page.dart';
 
 class AgendaPage extends StatefulWidget {
   const AgendaPage({Key? key}) : super(key: key);
@@ -11,92 +11,125 @@ class AgendaPage extends StatefulWidget {
 }
 
 class _AgendaPageState extends State<AgendaPage> {
-  final CaloriasController _caloriasControllerLogic = CaloriasController(CaloriasModel());
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>(); // Chave global para o Formulário
-  final TextEditingController _caloriasController = TextEditingController();
-  final TextEditingController _diaController = TextEditingController();
-  String _feedbackMessage = ''; // Usada para mostrar feedback
+  late final CaloriasController _caloriasController;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final TextEditingController _caloriasControllerInput = TextEditingController();
+  final TextEditingController _diaControllerInput = TextEditingController();
+  String _feedbackMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    final caloriasModel = CaloriasModel();
+    final caloriasService = CaloriasService(caloriasModel);
+    _caloriasController = CaloriasController(caloriasService);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Agenda de Calorias'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              _caloriasController.logout();
+              Navigator.pushReplacementNamed(context, '/login');
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
-          key: _formKey, // Atribuímos a chave ao Formulário
+          key: _formKey,
           child: Column(
             children: [
               // Campo para digitar o dia
               TextFormField(
-                controller: _diaController,
+                controller: _diaControllerInput,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                   labelText: 'Digite o dia do mês (1-31)',
                 ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'O dia não pode estar vazio.';
+                  }
+                  final dia = int.tryParse(value);
+                  if (dia == null || dia < 1 || dia > 31) {
+                    return 'Por favor, insira um dia válido (1-31).';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 10),
 
               // Campo para digitar as calorias
               TextFormField(
-                controller: _caloriasController,
+                controller: _caloriasControllerInput,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
                   labelText: 'Digite as calorias consumidas',
                 ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'As calorias não podem estar vazias.';
+                  }
+                  final calorias = double.tryParse(value);
+                  if (calorias == null || calorias < 0) {
+                    return 'Por favor, insira um valor numérico válido.';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 20),
 
               // Botão para adicionar calorias
               ElevatedButton(
                 onPressed: () {
-                  final caloriasInput = _caloriasController.text;
-                  final diaInput = _diaController.text;
+                  if (_formKey.currentState?.validate() ?? false) {
+                    final caloriasInput = _caloriasControllerInput.text;
+                    final diaInput = _diaControllerInput.text;
 
-                  // Chama a validação no controlador
-                  final erro = _caloriasControllerLogic.validarEntrada(caloriasInput, diaInput);
-                  if (erro.isEmpty) {
-                    // Validação bem-sucedida, processa os dados
-                    final calorias = double.parse(caloriasInput);
-                    final dia = int.parse(diaInput);
+                    final erro = _caloriasController.validarEntrada(caloriasInput, diaInput);
+                    if (erro.isEmpty) {
+                      final calorias = double.parse(caloriasInput);
+                      final dia = int.parse(diaInput);
 
-                    setState(() {
-                      _caloriasControllerLogic.adicionarCalorias(dia, calorias);
-                      _feedbackMessage = ''; // Limpa qualquer mensagem anterior
-                    });
-
-                    // Exibe a confirmação com o ícone de sucesso
-                    _exibirConfirmacao(isSuccess: true);
-                  } else {
-                    // Exibe o erro de validação
-                    setState(() {
-                      _feedbackMessage = erro;
-                    });
+                      _caloriasController.adicionarCalorias(dia, calorias);
+                      setState(() {
+                        _feedbackMessage = 'Calorias adicionadas com sucesso!';
+                      });
+                    } else {
+                      setState(() {
+                        _feedbackMessage = erro;
+                      });
+                    }
                   }
                 },
                 child: const Text('Adicionar Calorias ao Dia'),
               ),
               const SizedBox(height: 10),
 
-              // Exibe o feedback caso haja alguma mensagem
+              // Exibe o feedback de erro ou sucesso
               if (_feedbackMessage.isNotEmpty)
                 Text(
                   _feedbackMessage,
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(color: _feedbackMessage.contains('sucesso') ? Colors.green : Colors.red),
                 ),
               const SizedBox(height: 20),
 
               // Botão para ver o resumo do mês
               ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ResumoMesPage(caloriasControllerLogic: _caloriasControllerLogic),
-                    ),
-                  );
+                  if (_caloriasController.user.value != null) {
+                    Navigator.pushNamed(context, '/resumo');
+                  } else {
+                    // Redireciona para a tela de login se o usuário não estiver autenticado
+                    Navigator.pushReplacementNamed(context, '/login');
+                  }
                 },
                 child: const Text('Ver Resumo do Mês'),
               ),
@@ -104,45 +137,6 @@ class _AgendaPageState extends State<AgendaPage> {
           ),
         ),
       ),
-    );
-  }
-
-  // Função para exibir o pop-up com o ícone de sucesso ou erro
-  void _exibirConfirmacao({required bool isSuccess}) {
-    showDialog(
-      context: context,
-      barrierDismissible: false, // Impede o fechamento ao clicar fora
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(isSuccess ? 'Calorias Adicionadas!' : 'Erro na Inserção!'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Exibe o ícone de validação ou erro com base no sucesso da operação
-              Icon(
-                isSuccess ? Icons.check_circle : Icons.error,
-                color: isSuccess ? Colors.green : Colors.red,
-                size: 80,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                isSuccess
-                    ? 'As calorias foram adicionadas com sucesso!'
-                    : 'Por favor, verifique os dados inseridos.',
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        );
-      },
     );
   }
 }
