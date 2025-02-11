@@ -15,7 +15,7 @@ Carlos Henrique Vasconcelos Oliveira - RA : 2201585
 - Emulador ou dispositivo físico (Android ou iOS)
 ## Execução
 Clonar repositorio
- -git clone https://github.com/CarlosHenriqueVasconcelos/Calorias_app.git
+ -git clone https://github.com/CarlosHenriqueVasconcelos/Calorias_app.git/n
  Acessar diretorio onde foi clonado
 - Rodar comando "fluttert pub get" para a instalação das dependencias
 Configurar Banco de Dados
